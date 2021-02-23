@@ -2,27 +2,33 @@ from TGMMlibraries import lineageTree
 import numpy as np
 import os
 from mamut_xml_templates import *
-
+import sys
 
 def read_param_file():
-    p_param = raw_input('Please enter the path to the parameter file/folder:\n')
-    p_param = p_param.replace('"', '')
-    p_param = p_param.replace("'", '')
-    p_param = p_param.replace(" ", '')
-    if p_param[-4:] == '.csv':
-        f_names = [p_param]
-    else:
-        f_names = [os.path.join(p_param, f) for f in os.listdir(p_param) if '.csv' in f and not '~' in f]
+    if (sys.argv[1] is not None) and (sys.argv[1][-4:] == '.csv'):
+        f_names = [sys.argv[1]]
+        #print f_names + "\n"
+    else:    
+        p_param = raw_input('Please enter the path to the parameter file/folder:\n')
+        p_param = p_param.replace('"', '')
+        p_param = p_param.replace("'", '')
+        p_param = p_param.replace(" ", '')
+        if p_param[-4:] == '.csv':
+            f_names = [p_param]
+        else:
+            f_names = [os.path.join(p_param, f) for f in os.listdir(p_param) if '.csv' in f and not '~' in f]
     for file_name in f_names:
         f = open(file_name)
         lines = f.readlines()
         f.close()
         param_dict = {}
-        i = 0
+        i = 1
         nb_lines = len(lines)
+        delimeter = lines[0]
+        delimeter = delimeter.rstrip()        
         while i < nb_lines:
             l = lines[i]
-            split_line = l.split(',')
+            split_line = l.split(delimeter)
             param_name = split_line[0]
             if param_name in ['labels', 'downsampling', 'tissue_ids', 'tissue_names']:
                 name = param_name
@@ -35,7 +41,7 @@ def read_param_file():
                     i += 1
                     if i < nb_lines:
                         l = lines[i]
-                        split_line = l.split(',')
+                        split_line = l.split(delimeter)
                         param_name = split_line[0]
                 param_dict[name] = np.array(out)
             elif param_name in ['label_names']:
@@ -46,7 +52,7 @@ def read_param_file():
                     i += 1
                     if i < nb_lines:
                         l = lines[i]
-                        split_line = l.split(',')
+                        split_line = l.split(delimeter)
                         param_name = split_line[0]
                 param_dict[name] = np.array(out)
             else:
