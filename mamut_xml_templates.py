@@ -101,31 +101,6 @@ end_template = '''
       </TrackAnalyzers>
     </AnalyzerCollection>
   </Settings>
-  <GUIState>
-    <SetupAssignments>
-      <ConverterSetups>
-        <ConverterSetup>
-          <id>0</id>
-          <min>50.0</min>
-          <max>1100.0</max>
-          <color>-1</color>
-          <groupId>0</groupId>
-        </ConverterSetup>
-      </ConverterSetups>
-      <MinMaxGroups>
-        <MinMaxGroup>
-          <id>0</id>
-          <fullRangeMin>0.0</fullRangeMin>
-          <fullRangeMax>65535.0</fullRangeMax>
-          <rangeMin>0.0</rangeMin>
-          <rangeMax>65535.0</rangeMax>
-          <currentMin>50.0</currentMin>
-          <currentMax>1100.0</currentMax>
-        </MinMaxGroup>
-      </MinMaxGroups>
-    </SetupAssignments>
-    <Bookmarks />
-  </GUIState>
 </TrackMate>'''
 
     #<ImageData filename="{filename}.xml" folder="/media/nelas/Actinotroch/4d" width="1376" height="1040" nslices="{nslices}" nframes="{nframes}" pixelwidth="1.0" pixelheight="1.0" voxeldepth="1.0" timeinterval="1.0" />
