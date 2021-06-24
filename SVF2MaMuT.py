@@ -67,18 +67,19 @@ def read_param_file():
         tissue_names = param_dict.get('tissue_names', [])
         begin = int(param_dict.get('begin', None))
         end = int(param_dict.get('end', None))
+        do_mercator = bool(int(param_dict.get('do_mercator', '0')))
         filename = param_dict.get('filename', '.')
         folder = param_dict.get('folder', '.')
-        v_size = np.float(param_dict.get('v_size', 1.))
+        v_size = np.float(param_dict.get('v_size', 0.))
         dT = np.float(param_dict.get('dT', 1.))
 
     return (path_SVF, path_DB, path_output, tissue_ids, 
-        tissue_names, begin, end, filename, folder, v_size, dT)
+        tissue_names, begin, end, filename, folder, v_size, dT, do_mercator)
 
 def main():
     try:
         (path_SVF, path_to_DB, path_output, tissue_ids, 
-            tissue_names, begin, end, filename, folder, v_size, dT) = read_param_file()
+            tissue_names, begin, end, filename, folder, v_size, dT, do_mercator) = read_param_file()
     except Exception as e:
         print "Failed at reading the configuration file."
         print "Error: %s"%e
@@ -89,10 +90,12 @@ def main():
     # f = open(path_to_DB)
     # lines = f.readline()
     # f.close()
-
+    #print "Do mercator %s"%do_mercator
     if os.path.exists(path_to_DB):
-        DATA = np.loadtxt(path_to_DB, delimiter = ',', skiprows = 1, usecols = (0, 9))
-        tracking_value = dict(DATA[:, (0, 1)])
+        DATA = np.loadtxt(path_to_DB, delimiter = ',', skiprows = 1, usecols = (0, 6,7, 9))
+        tracking_value = dict(DATA[:, (0, 3)])
+        sphere_coord_theta = dict(DATA[:, (0, 1)])
+        sphere_coord_phi = dict(DATA[:, (0, 2)])
         kept_nodes = [c for c in SVF.nodes if tracking_value[c] in tissue_ids]
         kept_nodes_set = set(kept_nodes)
         t_id_2_N = dict(zip(tissue_ids, tissue_names))
@@ -113,7 +116,30 @@ def main():
 
         # Begin AllSpots.
         output.write(allspots_template.format(nspots=len(kept_nodes)))
-
+        
+        # Loop through lists of spots to try to center the model
+        Q = []
+        abs_center = [ 0.0,0.0,0.0 ]
+        if do_mercator:
+            for t in kept_times:
+               for c in SVF.time_nodes[t]:
+                   SVF.pos[c][0] = 20*np.arctan(np.exp(sphere_coord_theta[c]))-(np.pi/2 )
+                   SVF.pos[c][1] = 10*sphere_coord_phi[c]
+                   SVF.pos[c][2] = 0.0
+                   Q += [SVF.pos[c]]
+            abs_center = np.median(Q,axis=0)  
+        elif v_size > 0:
+            for t in kept_times:
+               for c in SVF.time_nodes[t]:
+                   SVF.pos[c][0] *= v_size
+                   SVF.pos[c][1] *= v_size
+                   SVF.pos[c][2] *= v_size
+        else:
+            for t in kept_times:
+               for c in SVF.time_nodes[t]:
+                   Q += [SVF.pos[c]]
+            abs_center = np.median(Q,axis=0) 
+            
         # Loop through lists of spots.
         for t in kept_times:
             cells = kept_nodes_set.intersection(SVF.time_nodes.get(t, []))
@@ -121,10 +147,10 @@ def main():
                 output.write(inframe_template.format(frame=t))
                 for c in cells:
                     output.write(spot_template.format(id=c, name=c, frame=t, t_id=tracking_value[c],
-                                                      x=SVF.pos[c][0]*v_size,
-                                                      y=SVF.pos[c][1]*v_size,
-                                                      z=SVF.pos[c][2]*v_size,
-                                                      # t_name=t_id_2_N.get(tracking_value[c], '?')
+                                                      x=SVF.pos[c][0]-abs_center[0],
+                                                      y=SVF.pos[c][1]-abs_center[1],
+                                                      z=SVF.pos[c][2]-abs_center[2],
+                                                      t_name=t_id_2_N.get(tracking_value[c], '?')
                                                       ))
                 output.write(inframe_end_template)
             else:
